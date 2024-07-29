@@ -1,0 +1,251 @@
+{% extends 'main/base.html' %}
+{% block title %}Upload Destinations{% endblock %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% block content %}
+<h6 align="left">
+    HINT: HERE YOU CAN IMPORT "DESTINATIONS".XLSX file
+</h6>
+<hr>
+<br>
+{% if request.user|has_group:"staff" %}
+<form method="post" enctype="multipart/form-data" class="form-inline">
+    {% csrf_token %}
+    <div class="form-group mb-2 mr-sm-2">
+        <input type="file" name="file" id="fileInput" onchange="checkFileInput()">
+    </div>
+    <div class="mb-2 mr-sm-2">
+        <span>Year: </span>
+        <select name="year" class="form-control" required>
+                <option value="">--</option>
+            {% for year in 2000|to_range:2050 %}
+                <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-2 mr-sm-2">
+        <span>Comment: </span>
+        <textarea name="comment" rows="1" cols="50" class="form-control" placeholder="Sum up file content's info e.g.: 'współprace 2024-06'" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary mb-2" id="uploadButton" disabled>Upload File</button>
+</form>
+{% endif %}
+<br>
+<hr>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+<h4  class="mt-3 mb-2 mr-sm-2" align="center">TABLE OF DESTINATIONS</h4>
+<form method="post" action="{% url 'delete_destination' %}" id="deleteForm">
+    {% csrf_token %}
+    <table class="table table-hover table-bordered mt-3 mb-2 mr-sm-2">
+        <thead>
+            <tr style="text-align: center;">
+                <th style="vertical-align:top"><input type="checkbox" id="select-all"></th>
+                <th style="vertical-align:top">Id</th>
+                <th style="vertical-align:top">Country</th>
+                <th style="vertical-align:top">University</th>
+                <th style="vertical-align:top">Study Level Available</th>
+                <th style="vertical-align:top">Available Places</th>
+                <th style="vertical-align:top">Contract Code</th>
+                <th style="vertical-align:top">Year of Action</th>
+                <th style="vertical-align:top">Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for destination in destinations_page_obj %}
+            <tr style="text-align: center;">
+                <td><input type="checkbox" name="destination_ids" value="{{ destination.id }}"></td>
+                <td>{{ destination.id }}</td>
+                <td>{{ destination.country }}</td>
+                <td>{{ destination.university }}</td>
+                <td>{{ destination.study_level_available }}</td>
+                <td style="text-align: center;">{{ destination.available_places }}</td>
+                <td style="text-align: center;">{{ destination.contract_code }}</td>
+                <td>{{ destination.year }}</td>
+                <td>{{ destination.comment }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if request.user|has_group:"staff" %}
+    <button type="submit" class="btn btn-danger" onclick="confirmDelete()" style="float: right;"><Delete>Delete</Delete></button>
+    <button type="button" class="btn btn-warning mb-2 mr-sm-2" onclick="triggerEditModalDest()" style="float: right;">Edit</button>
+</form>
+<button class="btn btn-primary mb-2 mr-sm-2" data-toggle="modal"  style="float: right;" data-target="#newDestinationModal">Create</button>
+{% endif %}
+<!-- Pagination Controls -->
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+        {% if destinations_page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="First">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ destinations_page_obj.previous_page_number }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link" aria-hidden="true">&laquo;&laquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link" aria-hidden="true">&laquo;</span>
+            </li>
+        {% endif %}
+        {% for num in destinations_page_obj.paginator.page_range %}
+            {% if destinations_page_obj.number == num %}
+                <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > destinations_page_obj.number|add:-3 and num < destinations_page_obj.number|add:3 %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+        {% if destinations_page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ destinations_page_obj.next_page_number }}" aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ destinations_page_obj.paginator.num_pages }}" aria-label="Last">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="page-item disabled">
+                <span class="page-link" aria-hidden="true">&raquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link" aria-hidden="true">&raquo;&raquo;</span>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+<!-- New Destination Modal -->
+<div class="modal fade" id="newDestinationModal" tabindex="-1" role="dialog" aria-labelledby="newDestinationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'add_destination' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newDestinationModalLabel">Add New Destination</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="country">Country:</label>
+                        <input type="text" id="country" name="country" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="university">University:</label>
+                        <input type="text" id="university" name="university" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="study_level_available">StudyLevel:</label>
+                        <input type="text" id="study_level_available" name="study_level_available" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="available_places">Available Places:</label>
+                        <input type="number" id="available_places" name="available_places" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contract_code">Contract Code:</label>
+                        <input type="text" id="contract_code" name="contract_code" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="year">Year:</label>
+                        <select id="year" name="year" class="form-control" required>
+                            {% for year in 2000|to_range:2050 %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Comment:</label>
+                        <textarea id="comment" name="comment" class="form-control" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Destination Modal -->
+<div class="modal fade" id="editDestinationModal" tabindex="-1" role="dialog" aria-labelledby="editDestinationModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_destination' %}">
+                {% csrf_token %}
+                <input type="hidden" id="editDestinationId" name="id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editDestinationModalLabel">Edit Destination</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editCountry">Country:</label>
+                        <input type="text" id="editCountry" name="country" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUniversity">University:</label>
+                        <input type="text" id="editUniversity" name="university" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStudyLevelAvailable">Study Level Available:</label>
+                        <input type="text" id="editStudyLevelAvailable" name="study_level_available" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editAvailablePlaces">Available Places:</label>
+                        <input type="number" id="editAvailablePlaces" name="available_places" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContractCode">Contract Code:</label>
+                        <input type="text" id="editContractCode" name="contract_code" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editYear">Year:</label>
+                        <select id="editYear" name="year" class="form-control" required>
+                            {% for year in 2000|to_range:2050 %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editComment">Comment:</label>
+                        <textarea id="editComment" name="comment" class="form-control" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('select-all').onclick = function() {
+    var checkboxes = document.getElementsByName('destination_ids');
+    for (var checkbox of checkboxes) {
+        checkbox.checked = this.checked;
+    }
+}
+</script>
+{% endblock %}

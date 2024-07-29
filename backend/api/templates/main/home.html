@@ -1,0 +1,33 @@
+{% extends 'main/base.html' %}
+{% block title %}Login{% endblock %}
+{% load crispy_forms_tags %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<br><br>
+
+<div>
+
+{% if user.is_authenticated %}
+    <h3>Manual:</h3>
+    <p>You can start by clicking on<strong> 'Mobility Related Data'</strong> tab, there you will be able to go to:  </p>
+    <ul>
+        <li><strong>'Student list'</strong> - to upload students' applications data and view it in the table.</li>
+        <li><strong>'Destination list'</strong> - to upload destination' related data and view it in the table.</li>
+    </ul>
+    <p>After you uploaded all necessary data please proceed by clicking on <strong>'Sorted and Approved'</strong> tab, there you will be able to go to:  </p>
+    <ul>
+        <li><strong>'Sorted list' </strong>- to view and assign students to destinations.</li>
+        <li><strong>'Approved list'</strong> - to view and download list of destination + approved students with all related info.</li>
+    </ul>
+</div>
+{%else%}
+    <p  ><strong>NOTIFICATION: </strong></p>
+    <ul>
+        <li>To access functionality please Authorize</li>
+        <li>You can start by Logging in</li>
+        <li>If you don't have an account please Register first</li>
+    </ul>
+{%endif%}
+</html>
+{%endblock%}

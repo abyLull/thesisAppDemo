@@ -1,0 +1,152 @@
+{% extends 'main/base.html' %}
+{% block title %}Sorted List{% endblock %}
+{% load crispy_forms_tags %}
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+{% load custom_filters %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Sorted List:</h1>
+    <form method="get" class="form-inline">
+        <label for="year" class="mr-2">Year:</label>
+        <select name="year" id="year" class="form-control" onchange="this.form.submit()">
+            <option value="">All Years</option>
+            {% for year in 2000|to_range:2050 %}
+                <option value="{{ year }}" {% if year|stringformat:"s" == request.GET.year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" name="auto-assign" class="btn btn-primary mb-3">Auto Assign Students</button>
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr style="text-align: center;">
+                <td class="block"><strong>Id</strong></td>
+                <td class="block"><strong>Country</strong></td>
+                <td class="block"><strong>University</strong></td>
+                <td class="block"><strong>Available Places</strong></td>
+                <td class="block"><strong>Contract Code</strong></td>
+                <td class="block"><strong>Study Level Available</strong></td>
+                <td class="block"><strong>Students</strong></td>
+                <td class="block"><strong>Comment</strong></td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for destination in page_obj %}
+                <tr>
+                    <td>{{ destination.id }}</td>
+                    <td>{{ destination.country }}</td>
+                    <td>{{ destination.university }}</td>
+                    <td style="text-align: center;">{{ destination.available_places }}</td>
+                    <td style="text-align: center;">{{ destination.contract_code }}</td>
+                    <td>{{ destination.study_level_available }}</td>
+                    <td>
+                        <div>
+                            <strong>Current:</strong>
+                            <ul>
+                                {% for student in destination.student.all %}
+                                <li>{{ student.name }} {{ student.surname }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#studentModal-{{ destination.id }}">Add/Delete</button>
+
+                        <div class="modal fade" id="studentModal-{{ destination.id }}" tabindex="-1" aria-labelledby="studentModalLabel-{{ destination.id }}" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="studentModalLabel-{{ destination.id }}">Select Students for {{ destination.university }}</h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6>Add Students</h6>
+                                        <form method="post" class="add-student-form" action="{% url 'sorted_list' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="destination_id" value="{{ destination.id }}">
+                                            <ul>
+                                                {% for student in destination_student_mapping|get_item:destination.id %}
+                                                    <li>
+                                                        <label>
+                                                            <input type="checkbox" name="add_student_ids" value="{{ student.id }}">
+                                                            {{ student.name }} {{ student.surname }} (Id: {{student.id}}, GPA: {{ student.gpa }}, Modified: {{ student.modified }}, Study Level: {{ student.study_level }})
+                                                        </label>
+                                                    </li>
+                                                {% empty %}
+                                                    <li>No matching students found</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <button type="submit" name="add_students" class="btn btn-success">Add Selected</button>
+                                        </form>
+                                        <hr>
+                                        <h6>Delete Students</h6>
+                                        <form method="post" class="delete-student-form" action="{% url 'sorted_list' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="destination_id" value="{{ destination.id }}">
+                                            <ul>
+                                                {% for student in destination.student.all %}
+                                                    <li>
+                                                        <label>
+                                                            <input type="checkbox" name="delete_student_ids" value="{{ student.id }}">
+                                                            {{ student.name }} {{ student.surname }} (Id: {{student.id}}, GPA: {{ student.gpa }}, Modified: {{ student.modified }}, Study Level: {{ student.study_level }})
+                                                        </label>
+                                                    </li>
+                                                {% empty %}
+                                                    <li>No students assigned</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <button type="submit" name="delete_students" class="btn btn-danger">Delete Selected</button>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ destination.comment }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+
+<nav aria-label="Page navigation example">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+                <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% if messages %}
+<p><strong> Warning:</strong></p>
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,342 @@
+{%load static%}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <link rel="icon" href="{% static 'icon.png' %}">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>Mobility Management</title>
+
+  <!-- Custom fonts for this template-->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <!-- Custom styles for this template-->
+  <link href="{% static 'css/sb-admin-2.min.css' %}" rel="stylesheet">
+
+  <style>
+    .full-width-navbar {
+      width: 100%;
+    }
+    .centered-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+  </style>
+
+</head>
+
+<body id="page-top">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    <ul class="navbar-nav bg-gradient-dark sidebar sidebar-dark accordion" id="accordionSidebar">
+
+      <!-- Sidebar - Brand -->
+      <a class="sidebar-brand d-flex align-items-center justify-content-center" href="/home">
+        <div class="sidebar-brand-icon">
+          <i class="fas fa-user-graduate"  ></i>
+        </div>
+        <div class="sidebar-brand-text mx-3">Student Mobility <sup>Management</sup></div>
+      </a>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider my-0">
+
+
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+      <div class="sidebar-heading"> Tools: </div>
+      <!-- Nav Item - Mobility Related Data Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseMobilityData" aria-expanded="true" aria-controls="collapseMobilityData">
+          <i class="fas fa-fw fa-folder"></i>
+          <span>Mobility Related Data</span>
+        </a>
+        <div id="collapseMobilityData" class="collapse" aria-labelledby="headingMobilityData" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="/students-xlsx">Students List</a>
+            <a class="collapse-item" href="/destinations-xlsx">Destinations List</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Nav Item - Sorted and Approved Collapse Menu -->
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseSortedApproved" aria-expanded="true" aria-controls="collapseSortedApproved">
+          <i class="fas fa-fw fa-check"></i>
+          <span>Sorted and Approved</span>
+        </a>
+        <div id="collapseSortedApproved" class="collapse" aria-labelledby="headingSortedApproved" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            <a class="collapse-item" href="/sorted">Sorted List</a>
+            <a class="collapse-item" href="/approved">Approved Students</a>
+          </div>
+        </div>
+      </li>
+
+      <!-- Divider -->
+      <hr class="sidebar-divider d-none d-md-block">
+      <div class="sidebar-heading"> access: </div>
+      <li class="nav-item">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseAuthentication" aria-expanded="true" aria-controls="collapseAuthentication">
+          <i class="fas fa-fw fa-male"></i>
+          <span>User</span>
+        </a>
+        <div id="collapseAuthentication" class="collapse" aria-labelledby="headingAuthentication" data-parent="#accordionSidebar">
+          <div class="bg-white py-2 collapse-inner rounded">
+            {% if user.is_authenticated %}
+            {% csrf_token %}
+            <a class="collapse-item" href="/logout_user">Logout</a>
+            {% else %}
+            <a class="collapse-item" href="/login">Login</a>
+            <a class="collapse-item" href="/sign-up">Registration</a>
+            {% endif %}
+          </div>
+        </div>
+      </li>
+
+
+
+      <!-- Divider -->
+      <hr class="sidebar-divider d-none d-md-block">
+      <!-- Sidebar Toggler (Sidebar) -->
+      <div class="text-center d-none d-md-inline">
+        <button class="rounded-circle border-0" id="sidebarToggle"></button>
+      </div>
+
+
+
+    </ul>
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow full-width-navbar">
+          <!-- Sidebar Toggle (Topbar) -->
+          <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
+            <i class="fa fa-bars"></i>
+          </button>
+          <ul class="navbar-nav ml-auto">
+            {% if user.is_authenticated %}
+            <li class="nav-item dropdown no-arrow">
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="mr-2 d-none d-lg-inline small text-gray-600">Logged in as: <b >{{ user.username }}</b></span>
+                <i class="fas fa-user fa-sm fa-fw mr-2 text-gray-600"></i>
+              </a>
+              <!-- Dropdown - User Information -->
+              <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
+                   aria-labelledby="userDropdown">
+                <a class="dropdown-item" href="/logout_user" >
+                  <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
+                  Logout
+                </a>
+              </div>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="/sign-up">
+                <span>Registration</span></a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="/login">
+                <span>Login</span></a>
+            </li>
+            {% endif %}
+          </ul>
+        </nav>
+        <!-- Centered Content -->
+        <div class="centered-content">
+          {% block content %}
+          {% endblock content %}
+        </div>
+      </div>
+      <!-- End of Main Content -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+  <script>
+        (function() {
+            var timeout;
+            var delay = {{ request.session.cookie_age }} * 1000;  // Session timeout in milliseconds
+
+            function resetTimer() {
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    window.location.href = "{% url 'logout_user' %}";  // Redirect to the logout URL
+                }, delay);
+            }
+
+            // Events to reset the timer
+            window.onload = resetTimer;
+            document.onmousemove = resetTimer;
+            document.onkeypress = resetTimer;
+            document.onclick = resetTimer;
+            document.onscroll = resetTimer;
+        })();
+  </script>
+  <!-- Bootstrap core JavaScript-->
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Core plugin JavaScript-->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
+
+  <!-- Custom scripts for all pages-->
+  <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
+
+  <script>
+    // Toggle the side navigation
+    $("#sidebarToggle, #sidebarToggleTop").on('click', function(e) {
+      $("body").toggleClass("sidebar-toggled");
+      $(".sidebar").toggleClass("toggled");
+      if ($(".sidebar").hasClass("toggled")) {
+        $('.sidebar .collapse').collapse('hide');
+      };
+    });
+
+    // Close any open menu accordions when window is resized below 768px
+    $(window).resize(function() {
+      if ($(window).width() < 768) {
+        $('.sidebar .collapse').collapse('hide');
+      };
+    });
+
+    // Prevent the content wrapper from scrolling when the fixed side navigation hovered over
+    $('body.fixed-nav .sidebar').on('mousewheel DOMMouseScroll wheel', function(e) {
+      if ($(window).width() > 768) {
+        var e0 = e.originalEvent,
+          delta = e0.wheelDelta || -e0.detail;
+        this.scrollTop += (delta < 0 ? 1 : -1) * 30;
+        e.preventDefault();
+      }
+    });
+
+    // Scroll to top button appear
+    $(document).on('scroll', function() {
+      var scrollDistance = $(this).scrollTop();
+      if (scrollDistance > 100) {
+        $('.scroll-to-top').fadeIn();
+      } else {
+        $('.scroll-to-top').fadeOut();
+      }
+    });
+
+    // Smooth scrolling using jQuery easing
+    $(document).on('click', 'a.scroll-to-top', function(e) {
+      var $anchor = $(this);
+      $('html, body').stop().animate({
+        scrollTop: ($($anchor.attr('href')).offset().top)
+      }, 1000, 'easeInOutExpo');
+      e.preventDefault();
+    });
+
+  </script>
+
+  <script>
+  function editStudent(studentId) {
+      // Populate the form with the existing data
+      fetch(`/student/${studentId}/`)
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('editStudentId').value = data.id;
+              document.getElementById('editName').value = data.name;
+              document.getElementById('editSurname').value = data.surname;
+              document.getElementById('editYearOfStudy').value = data.year_of_study;
+              document.getElementById('editStudyLevel').value = data.study_level;
+              document.getElementById('editContractCodes').value = data.contract_codes;
+              document.getElementById('editYear').value = data.year;
+              document.getElementById('editComment').value = data.comment;
+              document.getElementById('editGpa').value = data.gpa;
+              document.getElementById('editModified').value = data.modified;
+              $('#editStudentModal').modal('show');
+          });
+  }
+
+  function triggerEditModal() {
+      var selectedStudents = document.querySelectorAll('input[name="student_ids"]:checked');
+      if (selectedStudents.length === 1) {
+          var studentId = selectedStudents[0].value;
+          editStudent(studentId);
+      } else {
+          alert('Please select exactly one student to edit.');
+      }
+  }
+
+
+  function triggerEditModalDest() {
+      var selectedDestinations = document.querySelectorAll('input[name="destination_ids"]:checked');
+      if (selectedDestinations.length === 1) {
+          var destinationId = selectedDestinations[0].value;
+          editDestination(destinationId);
+      } else {
+          alert('Please select exactly one destination to edit.');
+      }
+  }
+
+
+
+  function confirmDelete() {
+        if (confirm("Are you sure you want to delete the selected items?")) {
+            document.getElementById('deleteForm').submit();
+        }
+    }
+
+
+  function editDestination(destinationId) {
+      // Populate the form with the existing data
+      fetch(`/destination/${destinationId}/`)
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('editDestinationId').value = data.id;
+              document.getElementById('editCountry').value = data.country;
+              document.getElementById('editUniversity').value = data.university;
+              document.getElementById('editStudyLevelAvailable').value = data.study_level_available;
+              document.getElementById('editAvailablePlaces').value = data.available_places;
+              document.getElementById('editContractCode').value = data.contract_code;
+              document.getElementById('editYear').value = data.year;
+              document.getElementById('editComment').value = data.comment;
+              $('#editDestinationModal').modal('show');
+          });
+  }
+
+  function deleteDestination(destinationId) {
+      document.getElementById('deleteDestinationId').value = destinationId;
+      $('#deleteDestinationModal').modal('show');
+  }
+  </script>
+
+  <script>
+      // Function to check the file input and enable/disable the upload button
+      function checkFileInput() {
+          var fileInput = document.getElementById('fileInput');
+          var uploadButton = document.getElementById('uploadButton');
+
+          if (fileInput.files.length > 0) {
+              uploadButton.disabled = false;
+          } else {
+              uploadButton.disabled = true;
+          }
+      }
+  </script>
+</body>
+
+</html>
+
+

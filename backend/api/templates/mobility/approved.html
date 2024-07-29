@@ -1,0 +1,203 @@
+{% extends 'main/base.html' %}
+{% block title %}Approved List{% endblock %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+
+<!-- Bootstrap CSS -->
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap JS and dependencies -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>TABLE OF DESTINATIONS AND ASSIGNED STUDENTS</h3>
+    <form method="get" class="form-inline">
+        <label for="year" class="mr-2">Year:</label>
+        <select name="year" id="year" class="form-control" onchange="this.form.submit()">
+            <option value="">All Years</option>
+            {% for year in 2000|to_range:2050 %}
+                <option value="{{ year }}" {% if year|stringformat:"s" == request.GET.year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>No.</th>
+            <th>Country</th>
+            <th>University</th>
+            <th>Available Places</th>
+            <th>Level of Study</th>
+            <th>Contract Code</th>
+            <th>Students</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for destination in destination_page_obj %}
+            <tr>
+                <td>{{ destination.id }}</td>
+                <td>{{ destination.country }}</td>
+                <td>{{ destination.university }}</td>
+                <td>{{ destination.available_places }}</td>
+                <td>{{ destination.study_level_available }}</td>
+                <td>{{ destination.contract_code }}</td>
+                <td>
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#viewStudentsModal{{ destination.id }}">
+                        View
+                    </button>
+                    <!-- Modal -->
+                    <div class="modal fade" id="viewStudentsModal{{ destination.id }}" tabindex="-1" role="dialog" aria-labelledby="viewStudentsModalLabel{{ destination.id }}" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="viewStudentsModalLabel{{ destination.id }}">Students for {{ destination.university }} ({{ destination.contract_code }})</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <ul>
+                                        {% for student in destination.student.all %}
+                                            <li>
+                                                <span> {{ student.name }} </span>
+                                                <span>{{ student.surname }};</span>
+                                                <span> {{student.year_of_study}} - year of study;</span>
+                                                <span>{{student.study_level}}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div align="right">
+    <a href="?download_destinations_csv=true{% if year %}&year={{ year }}{% endif %}" class="mb-2 mr-sm-2 fa fa-download">export CSV</a>
+    <a href="?download_destinations_xlsx=true{% if year %}&year={{ year }}{% endif %}" class="mb-2 mr-sm-2 fa fa-download">export XLSX</a>
+</div>
+<nav aria-label="Page navigation for destinations">
+    <ul class="pagination justify-content-center">
+        {% if destination_page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?destination_page=1">&laquo; First</a></li>
+            <li class="page-item"><a class="page-link" href="?destination_page={{ destination_page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+
+        {% for num in destination_page_obj.paginator.page_range %}
+            {% if destination_page_obj.number == num %}
+                <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+            {% elif num > destination_page_obj.number|add:'-3' and num < destination_page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?destination_page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if destination_page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?destination_page={{ destination_page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?destination_page={{ destination_page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+<br>
+<h3 class="mt-3 mb-2 mr-sm-2">TABLE OF APPROVED TO MOBILITY STUDENTS</h3>
+<table class="table table-bordered table-hover mt-3 mb-2 mr-sm-2">
+    <thead>
+        <tr style="text-align:center">
+            <th style="vertical-align:top">Student Id</th>
+            <th style="vertical-align:top">Name</th>
+            <th style="vertical-align:top">Surname</th>
+            <th style="vertical-align:top">Year of Study</th>
+            <th style="vertical-align:top">Study Level</th>
+            <th style="vertical-align:top">GPA</th>
+            <th style="vertical-align:top">Modified</th>
+            <th style="vertical-align:top">Country</th>
+            <th style="vertical-align:top">University</th>
+            <th style="vertical-align:top">Contract Code</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for student in student_page_obj %}
+            <tr>
+                <td>{{ student.id }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.surname }}</td>
+                <td>{{ student.year_of_study }}</td>
+                <td>{{ student.study_level }}</td>
+                <td>{{ student.gpa }}</td>
+                <td>{{ student.modified }}</td>
+                <td>
+                    {% with destination=student_destination_mapping|get_item:student.id %}
+                        {% if destination %}
+                            {{ destination.country }}
+                        {% else %}
+                            No destination assigned
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with destination=student_destination_mapping|get_item:student.id %}
+                        {% if destination %}
+                            {{ destination.university }}
+                        {% else %}
+                            No destination assigned
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% with destination=student_destination_mapping|get_item:student.id %}
+                        {% if destination %}
+                            {{ destination.contract_code }}
+                        {% else %}
+                            No destination assigned
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<nav aria-label="Page navigation for students">
+    <ul class="pagination justify-content-center">
+        {% if student_page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?student_page=1">&laquo; First</a></li>
+            <li class="page-item"><a class="page-link" href="?student_page={{ student_page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+
+        {% for num in student_page_obj.paginator.page_range %}
+            {% if student_page_obj.number == num %}
+                <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+            {% elif num > student_page_obj.number|add:'-3' and num < student_page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?student_page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if student_page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?student_page={{ student_page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?student_page={{ student_page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+<div align="right">
+
+    <a href="?download_approved_csv=true{% if year %}&year={{ year }}{% endif %}" class="mb-2 mr-sm-2 fa fa-download">export CSV</a>
+    <a href="?download_approved_xlsx=true{% if year %}&year={{ year }}{% endif %}" class="mb-2 mr-sm-2 fa fa-download">export XLSX</a>
+</div>
+
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

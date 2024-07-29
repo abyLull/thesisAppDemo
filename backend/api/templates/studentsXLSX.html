@@ -1,0 +1,252 @@
+{% extends 'main/base.html' %}
+{% block title %}Upload Students{% endblock %}
+{% load crispy_forms_tags %}
+{% load custom_filters %}
+{% block content %}
+<h6 align="left">HINT: HERE YOU CAN IMPORT "STUDENTS".XLSX file</h6>
+<hr>
+<br>
+{% if request.user|has_group:"staff" %}
+<form method="post" enctype="multipart/form-data" class="form-inline">
+    {% csrf_token %}
+    <div class="form-group mb-2 mr-sm-2">
+        <input type="file" name="file" id="fileInput" onchange="checkFileInput()">
+    </div>
+    <div class="mb-2 mr-sm-2">
+        <span>Year: </span>
+        <select name="year" class="form-control" required>
+            <option value="">--</option>
+            {% for year in 2000|to_range:2050 %}
+                <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-2 mr-sm-2">
+        <span>Recruitment: </span>
+        <select id="comment" name="comment" class="form-control" required>
+            <option value="">--</option>
+            <option value="main recruiting process summer semester">Main recruiting process summer semester</option>
+            <option value="main recruiting process winter semester">Main recruiting process winter semester</option>
+            <option value="additional recruiting process summer semester">Additional recruiting process summer semester</option>
+            <option value="additional recruiting process winter semester">Additional recruiting process winter semester</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary mb-2" id="uploadButton" disabled>Upload File</button>
+</form>
+{% endif %}
+<br>
+<hr>
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }}" role="alert">
+    {{ message }}
+</div>
+{% endfor %}
+{% endif %}
+<h4 class="mt-3 mb-2 mr-sm-2"  align="center">TABLE OF STUDENTS</h4>
+<form method="post" action="{% url 'delete_student' %}" id="deleteForm">
+    {% csrf_token %}
+    <table class="table table-bordered table-hover mt-3 mb-2 mr-sm-2">
+        <thead>
+            <tr style="text-align:center">
+                <th style="vertical-align:top"><input type="checkbox" id="select-all"></th>
+                <th style="vertical-align:top">Id</th>
+                <th style="vertical-align:top">Name</th>
+                <th style="vertical-align:top">Surname</th>
+                <th style="vertical-align:top">Year of Study</th>
+                <th style="vertical-align:top">Study Level</th>
+                <th style="vertical-align:top">Contract Codes</th>
+                <th style="vertical-align:top">Status</th>
+                <th style="vertical-align:top">Year of Action</th>
+                <th style="vertical-align:top">Comment</th>
+                <th style="vertical-align:top">GPA</th>
+                <th style="vertical-align:top">Modified</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in student_page_obj %}
+            <tr style="text-align:center">
+                <td><input type="checkbox" name="student_ids" value="{{ student.id }}"></td>
+                <td>{{ student.id }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.surname }}</td>
+                <td>{{ student.year_of_study }}</td>
+                <td>{{ student.study_level }}</td>
+                <td>{{ student.contract_codes }}</td>
+                <td>{{ student.status }}</td>
+                <td>{{ student.year }}</td>
+                <td>{{ student.comment }}</td>
+                <td>{{ student.gpa }}</td>
+                <td>{{ student.modified }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button type="submit" class="btn btn-danger mb-2 mr-sm-2" onclick="confirmDelete()" style="float: right;">Delete</button>
+    <button type="button" class="btn btn-warning mb-2 mr-sm-2" onclick="triggerEditModal()" style="float: right;">Edit</button>
+</form>
+{% if request.user|has_group:"staff" %}
+<button class="btn btn-primary mb-2 mr-sm-2" data-toggle="modal" data-target="#newStudentModal" style="float: right;">Create</button>
+{% endif %}
+<nav aria-label="Page navigation for students">
+    <ul class="pagination justify-content-center">
+        {% if student_page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ student_page_obj.previous_page_number }}">Previous</a></li>
+        {% endif %}
+
+        {% for num in student_page_obj.paginator.page_range %}
+            {% if student_page_obj.number == num %}
+                <li class="page-item active"><a class="page-link">{{ num }}</a></li>
+            {% elif num > student_page_obj.number|add:'-3' and num < student_page_obj.number|add:'3' %}
+                <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if student_page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ student_page_obj.next_page_number }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ student_page_obj.paginator.num_pages }}">Last &raquo;</a></li>
+        {% endif %}
+    </ul>
+</nav>
+<!-- New Student Modal -->
+<div class="modal fade" id="newStudentModal" tabindex="-1" role="dialog" aria-labelledby="newStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'add_student' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="newStudentModalLabel">Add New Student</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="surname">Surname:</label>
+                        <input type="text" id="surname" name="surname" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="year_of_study">Year of Study:</label>
+                        <input type="text" id="year_of_study" name="year_of_study" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="study_level">Study Level:</label>
+                        <input type="text" id="study_level" name="study_level" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contract_codes">Contract Codes:</label>
+                        <input type="text" id="contract_codes" name="contract_codes" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="year">Year:</label>
+                        <select id="year" name="year" class="form-control" required>
+                            {% for year in 2000|to_range:2050 %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="comment">Comment:</label>
+                        <textarea id="comment" name="comment" class="form-control" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="gpa">GPA:</label>
+                        <input type="number" step="0.01" id="gpa" name="gpa" class="form-control" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="modified">Modified:</label>
+                        <select id="modified" name="modified" class="form-control">
+                            <option value="negative">Negative</option>
+                            <option value="positive">Positive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Edit Student Modal -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" role="dialog" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_student' %}">
+                {% csrf_token %}
+                <input type="hidden" id="editStudentId" name="id">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editStudentModalLabel">Edit Student</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="editName">Name:</label>
+                        <input type="text" id="editName" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editSurname">Surname:</label>
+                        <input type="text" id="editSurname" name="surname" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editYearOfStudy">Year of Study:</label>
+                        <input type="text" id="editYearOfStudy" name="year_of_study" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStudyLevel">Study Level:</label>
+                        <input type="text" id="editStudyLevel" name="study_level" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editContractCodes">Contract Codes:</label>
+                        <input type="text" id="editContractCodes" name="contract_codes" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editYear">Year:</label>
+                        <select id="editYear" name="year" class="form-control" required>
+                            {% for year in 2000|to_range:2050 %}
+                                <option value="{{ year }}">{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editComment">Comment:</label>
+                        <textarea id="editComment" name="comment" class="form-control" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="editGpa">GPA:</label>
+                        <input type="number" step="0.01" id="editGpa" name="gpa" class="form-control" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="editModified">Modified:</label>
+                        <select id="editModified" name="modified" class="form-control">
+                            <option value="negative">Negative</option>
+                            <option value="positive">Positive</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('select-all').onclick = function() {
+      var checkboxes = document.getElementsByName('student_ids');
+      for (var checkbox of checkboxes) {
+          checkbox.checked = this.checked;
+      }
+  }
+</script>
+{%endblock%}
