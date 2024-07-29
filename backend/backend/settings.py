@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+import dj_database_url
 
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-gsboy7o__y-y)w30t@vwt8st1m2-1#&d$lv6a)&hyqci&lnav)'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["*"]
 
@@ -97,6 +98,8 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+DATABASES["default"] = dj_database_url.parse("postgresql://dbthesis_dczp_user:JTkOQU6Mb4L67FKwXoaNL6aISvGpBRBJ@dpg-cqjrqiij1k6c73a2pau0-a.frankfurt-postgres.render.com/dbthesis_dczp")
+
 
 
 # Password validation
