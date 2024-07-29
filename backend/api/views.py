@@ -20,7 +20,7 @@ import openpyxl
 
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff', 'guest'])
+#@allowed_users(allowed_roles=['staff', 'guest'])
 def UploadStudentDataViewXLSX(request):
     if request.method == 'POST':
         student_resource = StudentResource()
@@ -78,7 +78,7 @@ def UploadStudentDataViewXLSX(request):
 
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff', 'guest'])
+#@allowed_users(allowed_roles=['staff', 'guest'])
 def UploadDestinationDataViewXLSX(request):
     if request.method == 'POST':
         destination_resource = DestinationResource()
@@ -122,7 +122,7 @@ def UploadDestinationDataViewXLSX(request):
 
     return render(request, 'destinationsXLSX.html', {'destinations_page_obj': destinations_page_obj})
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def edit_destination(request):
     if request.method == 'POST':
         destination_id = request.POST.get('id')
@@ -133,7 +133,7 @@ def edit_destination(request):
             return redirect('destinations_xlsx')
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def delete_destination(request):
     if request.method == 'POST':
         destination_ids = request.POST.getlist('destination_ids')
@@ -146,7 +146,7 @@ def delete_destination(request):
         return redirect('destinations_xlsx')
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def edit_student(request):
     if request.method == 'POST':
         student_id = request.POST.get('id')
@@ -157,7 +157,7 @@ def edit_student(request):
             return redirect('students_xlsx')
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def student_detail(request, student_id):
     student = get_object_or_404(Student, id=student_id)
     data = {
@@ -176,7 +176,7 @@ def student_detail(request, student_id):
     return JsonResponse(data)
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def destination_detail(request, destination_id):
     destination = get_object_or_404(Destination, id=destination_id)
     data = {
@@ -191,7 +191,7 @@ def destination_detail(request, destination_id):
     }
     return JsonResponse(data)
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def delete_student(request):
     if request.method == 'POST':
         student_ids = request.POST.getlist('student_ids')
@@ -205,7 +205,7 @@ def delete_student(request):
 
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def add_student(request):
     if request.method == 'POST':
         indeks = request.POST['id']
@@ -237,7 +237,7 @@ def add_student(request):
         return redirect('students_xlsx')
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def add_destination(request):
     if request.method == 'POST':
         country = request.POST['country']
@@ -290,7 +290,7 @@ def logout_view(request):
 
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff'])
+#@allowed_users(allowed_roles=['staff'])
 def SortedListView(request):
     if request.method == 'POST':
         destination_id = request.POST.get('destination_id')
@@ -386,7 +386,7 @@ def can_assign_student_to_destination(student, destination):
            destination.study_level_available in study_level_match.get(student.study_level, [])
 
 @login_required(login_url="/login")
-@allowed_users(allowed_roles=['staff', 'guest'])
+#@allowed_users(allowed_roles=['staff', 'guest'])
 def ApprovedListView(request):
     year = request.GET.get('year')
     if year:
@@ -511,7 +511,6 @@ def ApprovedListView(request):
 
     return render(request, 'mobility/approved.html', context)
 #GPA not impoeted from file. same student cant be assigned to multiple destinations only one)
-@login_required(login_url="/login")
 @login_required(login_url="/login")
 def download_approved_xlsx(request):
     year = request.GET.get('year')
