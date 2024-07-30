@@ -14,7 +14,9 @@ from .models import Student,Destination
 from .decorators import allowed_users
 import csv,io
 import openpyxl
+import logging
 
+logger = logging.getLogger(__name__)
 
 # Create your views here.
 
@@ -65,11 +67,12 @@ def UploadStudentDataViewXLSX(request):
             messages.success(request, 'File uploaded and students added successfully.')
             return redirect('students_xlsx')
         except Exception as e:
-            messages.info(request, f'Error processing file: {str(e)}')
+            logger.error(f'Error processing file: {str(e)}', exc_info=True)
+            messages.error(request, f'Error processing file: {str(e)}')
             return redirect('students_xlsx')
 
     # Pagination logic
-    student_list = Student.objects.all()
+    student_list = Student.objects.all().order_by('id')
     paginator = Paginator(student_list, 10)  # Show 10 students per page
     page_number = request.GET.get('page')
     student_page_obj = paginator.get_page(page_number)
@@ -113,7 +116,7 @@ def UploadDestinationDataViewXLSX(request):
             )
             created.save()
 
-    destinations_list = Destination.objects.all()
+    destinations_list = Destination.objects.all().order_by('id')
 
     # Pagination
     paginator = Paginator(destinations_list, 10)  # Show 10 destinations per page
@@ -288,22 +291,27 @@ def logout_view(request):
         return redirect("/login")
     return render(request,"registration/logout_user.html")
 
-
 @login_required(login_url="/login")
-#@allowed_users(allowed_roles=['staff'])
 def SortedListView(request):
     if request.method == 'POST':
         destination_id = request.POST.get('destination_id')
-        destination = Destination.objects.get(id=destination_id)
+        try:
+            destination = Destination.objects.get(id=destination_id)
+        except Destination.DoesNotExist:
+            messages.error(request, "Destination not found.")
+            return redirect('sorted_list')
 
         if 'delete_students' in request.POST:
             student_ids = request.POST.getlist('delete_student_ids')
             for student_id in student_ids:
-                student = Student.objects.get(id=student_id)
-                destination.student.remove(student)
-                destination.save()
-                student.status = 'Pending'
-                student.save()
+                try:
+                    student = Student.objects.get(id=student_id)
+                    destination.student.remove(student)
+                    destination.save()
+                    student.status = 'Pending'
+                    student.save()
+                except Student.DoesNotExist:
+                    messages.error(request, f"Student with id {student_id} not found.")
             return redirect('sorted_list')
 
         if 'add_students' in request.POST:
@@ -314,13 +322,16 @@ def SortedListView(request):
                 messages.warning(request, f'Too many students selected for {destination.university} ({destination.contract_code}).')
             else:
                 for student_id in student_ids:
-                    student = Student.objects.get(id=student_id)
-                    if can_assign_student_to_destination(student, destination) and destination.student.count() < destination.available_places and destination.year == student.year:
-                        destination.student.add(student)
-                        student.status = 'Approved'
-                        student.save()
-                    else:
-                        messages.warning(request, f'Too many students selected for {destination.university} ({destination.contract_code}).')
+                    try:
+                        student = Student.objects.get(id=student_id)
+                        if can_assign_student_to_destination(student, destination) and destination.student.count() < destination.available_places and destination.year == student.year:
+                            destination.student.add(student)
+                            student.status = 'Approved'
+                            student.save()
+                        else:
+                            messages.warning(request, f'Cannot assign student {student.name} to {destination.university}.')
+                    except Student.DoesNotExist:
+                        messages.error(request, f"Student with id {student_id} not found.")
                 destination.save()
             return redirect('sorted_list')
 
@@ -336,7 +347,6 @@ def SortedListView(request):
             students = students.order_by('-gpa', '-modified')
             for student in students:
                 for destination in destinations:
-                    student_contract_codes = student.contract_codes.split(';')
                     if can_assign_student_to_destination(student, destination) and destination.student.count() < destination.available_places and destination.year == student.year:
                         destination.student.add(student)
                         student.status = 'Approved'
@@ -347,11 +357,11 @@ def SortedListView(request):
 
     year = request.GET.get('year')
     if year:
-        destinations = Destination.objects.filter(year=year)
-        students = Student.objects.filter(status='Pending', year=year)
+        destinations = Destination.objects.filter(year=year).order_by('id')
+        students = Student.objects.filter(status='Pending', year=year).order_by('id')
     else:
-        destinations = Destination.objects.all()
-        students = Student.objects.filter(status='Pending')
+        destinations = Destination.objects.all().order_by('id')
+        students = Student.objects.filter(status='Pending').order_by('id')
 
     paginator = Paginator(destinations, 10)
     page_number = request.GET.get('page', 1)
@@ -367,15 +377,14 @@ def SortedListView(request):
         ]
         destination_student_mapping[destination.id] = matching_students
 
+    logger.debug("destination_student_mapping: %s", destination_student_mapping)
+
     return render(request, 'mobility/sorted.html', {
         'page_obj': page_obj,
         'destination_student_mapping': destination_student_mapping,
         'students': students,
     })
-#separate table for unassigned student, or filtering added for student page.
-#separate approved students table sinto 2 separaate pages
-#change name of sorted list
-#handling of missing dataa in file
+
 def can_assign_student_to_destination(student, destination):
     study_level_match = {
         'pierwszego stopnia': ['pierwszy, drugi i trzeci', 'pierwszego stopnia', 'pierwszy i drugi'],
@@ -385,16 +394,18 @@ def can_assign_student_to_destination(student, destination):
     return destination.contract_code in student.contract_codes.split(';') and \
            destination.study_level_available in study_level_match.get(student.study_level, [])
 
+
+
 @login_required(login_url="/login")
 #@allowed_users(allowed_roles=['staff', 'guest'])
 def ApprovedListView(request):
     year = request.GET.get('year')
     if year:
-        destinations = Destination.objects.filter(year=year)
-        approved_students = Student.objects.filter(status='Approved', year=year)
+        destinations = Destination.objects.filter(year=year).order_by('id')
+        approved_students = Student.objects.filter(status='Approved', year=year).order_by('id')
     else:
-        destinations = Destination.objects.all()
-        approved_students = Student.objects.filter(status='Approved')
+        destinations = Destination.objects.all().order_by('id')
+        approved_students = Student.objects.filter(status='Approved').order_by('id')
 
     destination_paginator = Paginator(destinations, 10)
     destination_page_number = request.GET.get('destination_page', 1)

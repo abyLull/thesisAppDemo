@@ -8,7 +8,7 @@
 </h6>
 <hr>
 <br>
-{% if request.user|has_group:"staff" %}
+<!-- { if request.user|has_group:"staff" %}-->
 <form method="post" enctype="multipart/form-data" class="form-inline">
     {% csrf_token %}
     <div class="form-group mb-2 mr-sm-2">
@@ -29,7 +29,7 @@
     </div>
     <button type="submit" class="btn btn-primary mb-2" id="uploadButton" disabled>Upload File</button>
 </form>
-{% endif %}
+<!-- {endif %} -->
 <br>
 <hr>
 {% if messages %}
@@ -72,12 +72,12 @@
             {% endfor %}
         </tbody>
     </table>
-    {% if request.user|has_group:"staff" %}
+    <!-- {if request.user|has_group:"staff" %} -->
     <button type="submit" class="btn btn-danger" onclick="confirmDelete()" style="float: right;"><Delete>Delete</Delete></button>
     <button type="button" class="btn btn-warning mb-2 mr-sm-2" onclick="triggerEditModalDest()" style="float: right;">Edit</button>
 </form>
 <button class="btn btn-primary mb-2 mr-sm-2" data-toggle="modal"  style="float: right;" data-target="#newDestinationModal">Create</button>
-{% endif %}
+<!-- { endif %}-->
 <!-- Pagination Controls -->
 <nav aria-label="Page navigation example">
     <ul class="pagination justify-content-center">

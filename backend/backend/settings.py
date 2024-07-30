@@ -107,7 +107,24 @@ database_url = os.environ.get("DATABASE_URL")
 DATABASES["default"] = dj_database_url.parse(database_url)
 #DATABASES["default"] = dj_database_url.parse("postgresql://dbthesis_dczp_user:JTkOQU6Mb4L67FKwXoaNL6aISvGpBRBJ@dpg-cqjrqiij1k6c73a2pau0-a.frankfurt-postgres.render.com/dbthesis_dczp")
 
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': 'django_error.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -149,7 +166,7 @@ MEDIA_URL = 'images/'
 STATIC_DIRS = [
     BASE_DIR / 'static'
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 MEDIA_ROOT = BASE_DIR / 'images'
 
